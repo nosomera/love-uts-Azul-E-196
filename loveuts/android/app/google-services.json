@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "481289247031",
+    "project_id": "aplicacion-movil-1ea44",
+    "storage_bucket": "aplicacion-movil-1ea44.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:481289247031:android:d650e1a3fdcba3e7dde2b2",
+        "android_client_info": {
+          "package_name": "com.example.loveuts"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKpMoqd34aJulo5pqcQmXE3pQfTCtVZ7Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
