@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class CrearPerfilPasosScreen extends StatefulWidget {
   const CrearPerfilPasosScreen({super.key});
@@ -12,9 +15,14 @@ class CrearPerfilPasosScreen extends StatefulWidget {
 class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
   final PageController _pageController = PageController();
   int _paginaActual = 0;
-  final int _totalPaginas = 8; // ¡Subimos a 8 pasos!
+  final int _totalPaginas = 9; // 8 pasos de datos + 1 paso final de fotos = 9
 
-  // Controladores de Cajas de Texto
+  // Controladores del carrusel de imágenes (Cambiado a 3 como definiste en tu lista)
+  final List<File?> _imagenesSeleccionadas = [null, null, null];
+  final ImagePicker _picker = ImagePicker();
+  int _fotoActualCarrusel = 0; // Controla el puntito indicador del carrusel
+
+  // Controladores de Cajas de Texto  
   final TextEditingController _telefonoController = TextEditingController();
   final TextEditingController _nombreController = TextEditingController();
   final TextEditingController _edadController = TextEditingController();
@@ -24,9 +32,9 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
   String? _busquedaSeleccionada;
   String? _orientacionSeleccionada;
 
-  // NUEVO: Datos para la fórmula del Match
+  // Datos para la fórmula del Match
   final List<String> _interesesSeleccionados = [];
-  RangeValues _rangoEdadPreferido = const RangeValues(18, 25); // Rango inicial por defecto
+  RangeValues _rangoEdadPreferido = const RangeValues(18, 25);
   double _distanciaMaxima = 10.0; // En kilómetros
 
   bool _isLoading = false;
@@ -36,7 +44,6 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
   final List<String> _opcionesBusqueda = ['Una relación', 'Algo Casual', 'No estoy segura o seguro','Amistad', 'Prefiero No decirlo'];
   final List<String> _opcionesOrientacion = ['Heterosexual', 'Homosexual', 'Bisexual', 'Otro'];
   
-  // Lista de Intereses del Backlog
   final List<String> _listaIntereses = [
     'Lectura', 'Películas', 'Videojuegos', 'Tecnología', 
     'Viajar', 'Música', 'Pintura', 'Moda',
@@ -78,9 +85,16 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
     if (_paginaActual == 4 && _busquedaSeleccionada == null) mensaje = 'Cuéntanos qué buscas';
     if (_paginaActual == 5 && _orientacionSeleccionada == null) mensaje = 'Selecciona tu orientación';
     
-    // VALIDACIÓN NUEVA: Mínimo 3 intereses
     if (_paginaActual == 6 && _interesesSeleccionados.length < 3) {
       mensaje = 'Por favor selecciona al menos 3 intereses (${_interesesSeleccionados.length}/3)';
+    }
+
+    // Se corrigió el índice: el paso de las fotos es el último (índice 8)
+    if (_paginaActual == 8) {
+      int fotosSubidas = _imagenesSeleccionadas.where((foto) => foto != null).length;
+      if (fotosSubidas < 3) {
+        mensaje = 'Por favor selecciona las 3 fotos obligatorias para tu perfil';
+      }
     }
 
     if (mensaje.isNotEmpty) {
@@ -95,7 +109,26 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        // Guardamos todo el paquete consolidado en Firestore
+        List<String> urlsDeFotos = [];
+
+        // 1. Subir las imágenes del carrusel a Firebase Storage de manera ordenada
+        for (int i = 0; i < _imagenesSeleccionadas.length; i++) {
+          if (_imagenesSeleccionadas[i] != null) {
+            Reference ref = FirebaseStorage.instance
+                .ref()
+                .child('usuarios')
+                .child(user.uid)
+                .child('foto_$i.jpg');
+
+            UploadTask uploadTask = ref.putFile(_imagenesSeleccionadas[i]!);
+            TaskSnapshot snapshot = await uploadTask;
+            
+            String urlDescarga = await snapshot.ref.getDownloadURL();
+            urlsDeFotos.add(urlDescarga);
+          }
+        }
+
+        // 2. Guardamos todo el paquete consolidado en Firestore junto a las URLs del Storage
         await FirebaseFirestore.instance.collection('usuarios').doc(user.uid).set({
           'telefono': _telefonoController.text.trim(),
           'nombre': _nombreController.text.trim(),
@@ -103,11 +136,11 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
           'genero': _generoSeleccionado,
           'que_busca': _busquedaSeleccionada,
           'orientacion': _orientacionSeleccionada,
-          // Guardando datos del algoritmo de Match:
           'intereses': _interesesSeleccionados,
           'match_edad_min': _rangoEdadPreferido.start.round(),
           'match_edad_max': _rangoEdadPreferido.end.round(),
           'match_distancia_max': _distanciaMaxima.round(),
+          'fotos': urlsDeFotos, // Guardado exitoso del array de fotos
           'perfil_completo': true,
           'fecha_creacion': FieldValue.serverTimestamp(),
         });
@@ -118,9 +151,22 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
         Navigator.pushReplacementNamed(context, '/home');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al guardar datos: $e')));
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _seleccionarFoto(int indice) async {
+    final XFile? imagenSoportada = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+    );
+
+    if (imagenSoportada != null) {
+      setState(() {
+        _imagenesSeleccionadas[indice] = File(imagenSoportada.path);
+      });
     }
   }
 
@@ -129,7 +175,7 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
     double progreso = (_paginaActual + 1) / _totalPaginas;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFECEF), // Fondo rosa sutil del mockup
+      backgroundColor: const Color(0xFFFFECEF),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -169,12 +215,9 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
                         _construirPasoSeleccion('Mi género es', 'Selecciona la opción con la que te identificas.', _generos, _generoSeleccionado, (val) => setState(() => _generoSeleccionado = val)),
                         _construirPasoSeleccion('Estoy buscando...', 'Esto nos ayudará a filtrar tus posibles matches.', _opcionesBusqueda, _busquedaSeleccionada, (val) => setState(() => _busquedaSeleccionada = val)),
                         _construirPasoSeleccion('Mi orientación es', 'Dinos cuál es tu orientación sexual.', _opcionesOrientacion, _orientacionSeleccionada, (val) => setState(() => _orientacionSeleccionada = val)),
-                        
-                        // PASO 7: Intereses en Burbujas Seleccionables
                         _construirPasoIntereses(),
-
-                        // PASO 8: Filtros del algoritmo (Edad y Distancia)
                         _construirPasoFiltrosMatch(),
+                        _construirPasoCarruselFotos(), // <-- El nuevo carrusel interactivo
                       ],
                     ),
                   ),
@@ -201,7 +244,7 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
     );
   }
 
-  // --- VISTAS EXISTENTES OPTIMIZADAS ---
+  // --- VISTAS AUXILIARES EXISTENTES ---
   Widget _construirPasoTexto(String titulo, String subtitulo, TextEditingController controller, String hint, TextInputType tipoTeclado) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -259,9 +302,6 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
     );
   }
 
-  // --- NUEVAS VISTAS AGREGADAS ---
-
-  // Vista de Intereses con Wrap y FilterChips automáticos
   Widget _construirPasoIntereses() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -275,8 +315,8 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
         const SizedBox(height: 25),
         SingleChildScrollView(
           child: Wrap(
-            spacing: 10.0, // Espacio horizontal entre burbujas
-            runSpacing: 10.0, // Espacio vertical entre líneas
+            spacing: 10.0,
+            runSpacing: 10.0,
             alignment: WrapAlignment.center,
             children: _listaIntereses.map((interes) {
               final estaSeleccionado = _interesesSeleccionados.contains(interes);
@@ -308,7 +348,6 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
     );
   }
 
-  // Vista de Filtros Avanzados (Edad y Distancia) para el Match
   Widget _construirPasoFiltrosMatch() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -321,8 +360,6 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
           child: Text('Configura tus filtros ideales para conectar.', style: TextStyle(fontSize: 14, color: Colors.grey)),
         ),
         const SizedBox(height: 40),
-
-        // Rango de Edad
         Text(
           'Rango de edad cómodo: ${_rangoEdadPreferido.start.round()} - ${_rangoEdadPreferido.end.round()} años',
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -348,8 +385,6 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
           ),
         ),
         const SizedBox(height: 30),
-
-        // Distancia Máxima
         Text(
           'Distancia máxima: ${_distanciaMaxima.round()} km',
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -371,6 +406,98 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
             },
           ),
         ),
+      ],
+    );
+  }
+
+  // === NUEVA INTERFAZ: PASO DE CARRUSEL DE FOTOS CUADRADO ===
+  Widget _construirPasoCarruselFotos() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Text('Agrega Tus Fotos', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        const Text(
+          'Desliza el cuadrado para añadir o cambiar cada una de tus 3 fotos obligatorias.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 14, color: Colors.grey),
+        ),
+        const SizedBox(height: 30),
+
+        // Contenedor Cuadrado del Carrusel Deslizable
+        ClipRRect(
+          borderRadius: BorderRadius.circular(25),
+          child: Container(
+            width: 280,
+            height: 280, // Relación perfecta 1:1 (Cuadrado)
+            color: Colors.white,
+            child: PageView.builder(
+              itemCount: _imagenesSeleccionadas.length,
+              onPageChanged: (int index) {
+                setState(() => _fotoActualCarrusel = index);
+              },
+              itemBuilder: (context, index) {
+                final imagen = _imagenesSeleccionadas[index];
+                return GestureDetector(
+                  onTap: () => _seleccionarFoto(index),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFFFF94B4), width: 2),
+                      borderRadius: BorderRadius.circular(25),
+                      image: imagen != null
+                          ? DecorationImage(image: FileImage(imagen), fit: BoxFit.cover)
+                          : null,
+                    ),
+                    child: imagen == null
+                        ? Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.add_photo_alternate, color: Color(0xFFFF3366), size: 50),
+                              const SizedBox(height: 10),
+                              Text(
+                                'Toca para subir la foto ${index + 1}',
+                                style: const TextStyle(color: Color(0xFFFF3366), fontWeight: FontWeight.w500),
+                              ),
+                            ],
+                          )
+                        : Stack(
+                            children: [
+                              Positioned(
+                                bottom: 15,
+                                right: 15,
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                                  child: const Icon(Icons.edit, color: Colors.white, size: 18),
+                                ),
+                              )
+                            ],
+                          ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Puntitos Indicadores del Carrusel (Page Indicators)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(_imagenesSeleccionadas.length, (index) {
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.symmetric(horizontal: 5),
+              height: 8,
+              width: _fotoActualCarrusel == index ? 24 : 8,
+              decoration: BoxDecoration(
+                color: _fotoActualCarrusel == index ? const Color(0xFFFF3366) : Colors.grey[400],
+                borderRadius: BorderRadius.circular(10),
+              ),
+            );
+          }),
+        ),
+        const SizedBox(height: 30),
       ],
     );
   }
