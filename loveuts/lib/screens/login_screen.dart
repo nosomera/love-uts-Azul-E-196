@@ -25,7 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       return;
     }
-
+/*
     // Validación de correo institucional según tu Backlog
     if (!email.endsWith('@correo.uts.edu.co')) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -33,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       return;
     }
-
+*/
     setState(() => _isLoading = true);
 
     try {
@@ -65,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 60),
           child: Column(
             children: [
-              Image.asset('assets/logo_uts.png', height: 120),
+              Image.asset('assets/LogoLoveUTS.png', height: 120),
               const SizedBox(height: 20),
               const Text(
                 'LOVE UTS',
@@ -107,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               TextButton(
                 onPressed: () {
-                  // Aquí navegarás a la pantalla de Registro que haremos después
+                  Navigator.pushNamed(context, '/registro');
                 },
                 child: const Text('¿No tienes cuenta? Regístrate aquí'),
               )

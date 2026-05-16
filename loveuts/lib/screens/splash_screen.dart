@@ -30,7 +30,7 @@ class _SplashScreenState extends State<SplashScreen> {
           children: [
             // 1. El Logo de las UTS (Asegúrate de tenerlo en la carpeta assets)
             Image.asset(
-              'assets/logo_uts.png',
+              'assets/LogoLoveUTS.png',
               width: 180,
               errorBuilder: (context, error, stackTrace) {
                 // Si la imagen falla o no está, muestra un icono temporal

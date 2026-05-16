@@ -17,13 +17,14 @@ class _RegistroScreenState extends State<RegistroScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
-    if (!email.endsWith('@correo.uts.edu.co')) {
+/*
+    if (!email.endsWith('@uts.edu.co')) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Solo se permiten correos de las UTS')),
       );
       return;
     }
-
+ */
     setState(() => _isLoading = true);
 
     try {
