@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Importante para verificar el perfil
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -9,12 +10,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Controladores para capturar lo que el usuario escribe
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  // Función para iniciar sesión
   Future<void> _login() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -25,34 +24,58 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       return;
     }
-/*
-    // Validación de correo institucional según tu Backlog
-    if (!email.endsWith('@correo.uts.edu.co')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Usa tu correo @correo.uts.edu.co')),
-      );
-      return;
-    }
-*/
+
     setState(() => _isLoading = true);
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      // 1. Intentar iniciar sesión en Firebase Auth
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      // Si entra con éxito, aquí lo mandas a la pantalla de Matches o Perfil
-      print("Sesión iniciada");
+
+      final user = userCredential.user;
+
+      if (user != null) {
+        // 2. Consultar en Firestore si el perfil ya existe y está completo
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('usuarios')
+            .doc(user.uid)
+            .get();
+
+        if (userDoc.exists && userDoc.data() != null) {
+          Map<String, dynamic> datos = userDoc.data() as Map<String, dynamic>;
+          
+          // 3. Evaluar la bandera del perfil
+          if (datos['perfil_completo'] == true) {
+            print("Perfil completo encontrado. Redirigiendo a la Home.");
+            if (mounted) Navigator.pushReplacementNamed(context, '/home');
+          } else {
+            print("Perfil incompleto. Redirigiendo a creación de perfil.");
+            if (mounted) Navigator.pushReplacementNamed(context, '/crear_perfil');
+          }
+        } else {
+          // Si el documento ni siquiera existe (primer ingreso absoluto)
+          print("No existe registro del usuario en Firestore. Redirigiendo a creación de perfil.");
+          if (mounted) Navigator.pushReplacementNamed(context, '/crear_perfil');
+        }
+      }
+
     } on FirebaseAuthException catch (e) {
       String mensaje = 'Error al iniciar sesión';
       if (e.code == 'user-not-found') mensaje = 'Usuario no registrado';
       if (e.code == 'wrong-password') mensaje = 'Contraseña incorrecta';
+      if (e.code == 'invalid-credential') mensaje = 'Credenciales incorrectas';
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(mensaje)),
       );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ocurrió un error inesperado: $e')),
+      );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -60,11 +83,12 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView( // Para que no tape el teclado los campos
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 60),
           child: Column(
             children: [
+              // Corregido al formato de imagen limpio y sin espacios
               Image.asset('assets/LogoLoveUTS.png', height: 120),
               const SizedBox(height: 20),
               const Text(
@@ -72,28 +96,29 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.green),
               ),
               const SizedBox(height: 40),
-              // Campo de Correo
+              
               TextField(
                 controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(
                   labelText: 'Correo Institucional',
                   border: OutlineInputBorder(),
-                  prefixIcon: Icon(IconData(0xe22a, fontFamily: 'MaterialIcons')), // Icono de correo
+                  prefixIcon: Icon(Icons.email_outlined),
                 ),
               ),
               const SizedBox(height: 20),
-              // Campo de Contraseña
+              
               TextField(
                 controller: _passwordController,
-                obscureText: true, // Para ocultar la clave (Seguridad CRC-010)
+                obscureText: true,
                 decoration: const InputDecoration(
                   labelText: 'Contraseña',
                   border: OutlineInputBorder(),
-                  prefixIcon: Icon(IconData(0xe3ae, fontFamily: 'MaterialIcons')), // Icono de llave
+                  prefixIcon: Icon(Icons.lock_outline),
                 ),
               ),
               const SizedBox(height: 30),
-              // Botón Continuar (Mockup pág 1)
+              
               SizedBox(
                 width: double.infinity,
                 height: 50,
