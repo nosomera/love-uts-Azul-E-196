@@ -4,8 +4,9 @@ import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/registro_screen.dart';
-import 'screens/crear_perfil_pasos_screen.dart'; // Importante
-import 'screens/home_screen.dart';              // Importante
+import 'screens/crear_perfil_pasos_screen.dart';
+import 'screens/solicitar_ubicacion_screen.dart'; // <-- IMPORTA LA PANTALLA DE UBICACIÓN
+import 'screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,8 +35,9 @@ class LoveUTS extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(), 
         '/registro': (context) => const RegistroScreen(),
-        '/crear_perfil': (context) => const CrearPerfilPasosScreen(), // Ruta agregada
-        '/home': (context) => const HomeScreen(),                     // Ruta agregada
+        '/crear_perfil': (context) => const CrearPerfilPasosScreen(),
+        '/solicitar_ubicacion': (context) => const SolicitarUbicacionScreen(),
+        '/home': (context) => const HomeScreen(),
       },
     );
   }
