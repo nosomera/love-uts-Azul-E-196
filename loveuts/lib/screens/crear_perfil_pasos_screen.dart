@@ -22,7 +22,7 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
   final ImagePicker _picker = ImagePicker();
   int _fotoActualCarrusel = 0; // Controla el puntito indicador del carrusel
 
-  // Controladores de Cajas de Texto  
+  // Controladores de Cajas de Texto
   final TextEditingController _telefonoController = TextEditingController();
   final TextEditingController _nombreController = TextEditingController();
   final TextEditingController _edadController = TextEditingController();
@@ -41,14 +41,37 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
 
   // Listas de opciones estáticas
   final List<String> _generos = ['Hombre', 'Mujer'];
-  final List<String> _opcionesBusqueda = ['Una relación', 'Algo Casual', 'No estoy segura o seguro','Amistad', 'Prefiero No decirlo'];
-  final List<String> _opcionesOrientacion = ['Heterosexual', 'Homosexual', 'Bisexual', 'Otro'];
-  
+  final List<String> _opcionesBusqueda = [
+    'Una relación',
+    'Algo Casual',
+    'No estoy segura o seguro',
+    'Amistad',
+    'Prefiero No decirlo',
+  ];
+  final List<String> _opcionesOrientacion = [
+    'Heterosexual',
+    'Homosexual',
+    'Bisexual',
+    'Otro',
+  ];
+
   final List<String> _listaIntereses = [
-    'Lectura', 'Películas', 'Videojuegos', 'Tecnología', 
-    'Viajar', 'Música', 'Pintura', 'Moda',
-    'Anime', 'Gym', 'Estudiar',
-    'Deporte', 'Mascotas', 'Cocina', 'Baile', 'Fotografía'
+    'Lectura',
+    'Películas',
+    'Videojuegos',
+    'Tecnología',
+    'Viajar',
+    'Música',
+    'Pintura',
+    'Moda',
+    'Anime',
+    'Gym',
+    'Estudiar',
+    'Deporte',
+    'Mascotas',
+    'Cocina',
+    'Baile',
+    'Fotografía',
   ];
 
   @override
@@ -62,6 +85,7 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
 
   void _siguientePaso() {
     if (_validarPasoActual()) {
+      FocusScope.of(context).unfocus();
       if (_paginaActual < _totalPaginas - 1) {
         _pageController.nextPage(
           duration: const Duration(milliseconds: 300),
@@ -75,30 +99,42 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
 
   bool _validarPasoActual() {
     String mensaje = '';
-    if (_paginaActual == 0 && _telefonoController.text.trim().isEmpty) mensaje = 'Por favor ingresa tu teléfono';
-    if (_paginaActual == 1 && _nombreController.text.trim().isEmpty) mensaje = 'Por favor dinos tu nombre';
+    if (_paginaActual == 0 && _telefonoController.text.trim().isEmpty)
+      mensaje = 'Por favor ingresa tu teléfono';
+    if (_paginaActual == 1 && _nombreController.text.trim().isEmpty)
+      mensaje = 'Por favor dinos tu nombre';
     if (_paginaActual == 2) {
       final edad = int.tryParse(_edadController.text.trim());
-      if (edad == null || edad < 18) mensaje = 'Debes ingresar una edad válida (Mayor de 18)';
+      if (edad == null || edad < 18)
+        mensaje = 'Debes ingresar una edad válida (Mayor de 18)';
     }
-    if (_paginaActual == 3 && _generoSeleccionado == null) mensaje = 'Selecciona tu género';
-    if (_paginaActual == 4 && _busquedaSeleccionada == null) mensaje = 'Cuéntanos qué buscas';
-    if (_paginaActual == 5 && _orientacionSeleccionada == null) mensaje = 'Selecciona tu orientación';
-    
+    if (_paginaActual == 3 && _generoSeleccionado == null)
+      mensaje = 'Selecciona tu género';
+    if (_paginaActual == 4 && _busquedaSeleccionada == null)
+      mensaje = 'Cuéntanos qué buscas';
+    if (_paginaActual == 5 && _orientacionSeleccionada == null)
+      mensaje = 'Selecciona tu orientación';
+
     if (_paginaActual == 6 && _interesesSeleccionados.length < 3) {
-      mensaje = 'Por favor selecciona al menos 3 intereses (${_interesesSeleccionados.length}/3)';
+      mensaje =
+          'Por favor selecciona al menos 3 intereses (${_interesesSeleccionados.length}/3)';
     }
 
     // Se corrigió el índice: el paso de las fotos es el último (índice 8)
     if (_paginaActual == 8) {
-      int fotosSubidas = _imagenesSeleccionadas.where((foto) => foto != null).length;
+      int fotosSubidas = _imagenesSeleccionadas
+          .where((foto) => foto != null)
+          .length;
       if (fotosSubidas < 3) {
-        mensaje = 'Por favor selecciona las 3 fotos obligatorias para tu perfil';
+        mensaje =
+            'Por favor selecciona las 3 fotos obligatorias para tu perfil';
       }
     }
 
     if (mensaje.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensaje)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(mensaje)));
       return false;
     }
     return true;
@@ -122,36 +158,43 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
 
             UploadTask uploadTask = ref.putFile(_imagenesSeleccionadas[i]!);
             TaskSnapshot snapshot = await uploadTask;
-            
+
             String urlDescarga = await snapshot.ref.getDownloadURL();
             urlsDeFotos.add(urlDescarga);
           }
         }
 
         // 2. Guardamos todo el paquete consolidado en Firestore junto a las URLs del Storage
-        await FirebaseFirestore.instance.collection('usuarios').doc(user.uid).set({
-          'telefono': _telefonoController.text.trim(),
-          'nombre': _nombreController.text.trim(),
-          'edad': int.parse(_edadController.text.trim()),
-          'genero': _generoSeleccionado,
-          'que_busca': _busquedaSeleccionada,
-          'orientacion': _orientacionSeleccionada,
-          'intereses': _interesesSeleccionados,
-          'match_edad_min': _rangoEdadPreferido.start.round(),
-          'match_edad_max': _rangoEdadPreferido.end.round(),
-          'match_distancia_max': _distanciaMaxima.round(),
-          'fotos': urlsDeFotos, // Guardado exitoso del array de fotos
-          'perfil_completo': true,
-          'fecha_creacion': FieldValue.serverTimestamp(),
-        });
-        
+        await FirebaseFirestore.instance
+            .collection('usuarios')
+            .doc(user.uid)
+            .set({
+              'telefono': _telefonoController.text.trim(),
+              'nombre': _nombreController.text.trim(),
+              'edad': int.parse(_edadController.text.trim()),
+              'genero': _generoSeleccionado,
+              'que_busca': _busquedaSeleccionada,
+              'orientacion': _orientacionSeleccionada,
+              'intereses': _interesesSeleccionados,
+              'match_edad_min': _rangoEdadPreferido.start.round(),
+              'match_edad_max': _rangoEdadPreferido.end.round(),
+              'match_distancia_max': _distanciaMaxima.round(),
+              'fotos': urlsDeFotos, // Guardado exitoso del array de fotos
+              'perfil_completo': true,
+              'fecha_creacion': FieldValue.serverTimestamp(),
+            });
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('¡Tu perfil de Love UTS está completo!')),
+          const SnackBar(
+            content: Text('¡Tu perfil de Love UTS está completo!'),
+          ),
         );
-        Navigator.pushReplacementNamed(context, '/home');
+        Navigator.pushReplacementNamed(context, '/solicitar_ubicacion');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al guardar datos: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al guardar datos: $e')));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -183,6 +226,7 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
             ? IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.black),
                 onPressed: () {
+                  FocusScope.of(context).unfocus();
                   _pageController.previousPage(
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
@@ -207,21 +251,59 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
                     child: PageView(
                       controller: _pageController,
                       physics: const NeverScrollableScrollPhysics(),
-                      onPageChanged: (index) => setState(() => _paginaActual = index),
+                      onPageChanged: (index) =>
+                          setState(() => _paginaActual = index),
                       children: [
-                        _construirPasoTexto('Mi número es', 'Necesitaremos tu número de teléfono para contactarte.', _telefonoController, 'Número de teléfono', TextInputType.phone),
-                        _construirPasoTexto('¿Cómo te llamas?', 'Conozcámonos un poco.', _nombreController, 'Nombre o apodo', TextInputType.text),
-                        _construirPasoTexto('¿Qué edad tienes?', 'Debes ser mayor de edad para usar Love UTS.', _edadController, 'Tu edad', TextInputType.number),
-                        _construirPasoSeleccion('Mi género es', 'Selecciona la opción con la que te identificas.', _generos, _generoSeleccionado, (val) => setState(() => _generoSeleccionado = val)),
-                        _construirPasoSeleccion('Estoy buscando...', 'Esto nos ayudará a filtrar tus posibles matches.', _opcionesBusqueda, _busquedaSeleccionada, (val) => setState(() => _busquedaSeleccionada = val)),
-                        _construirPasoSeleccion('Mi orientación es', 'Dinos cuál es tu orientación sexual.', _opcionesOrientacion, _orientacionSeleccionada, (val) => setState(() => _orientacionSeleccionada = val)),
+                        _construirPasoTexto(
+                          'Mi número es',
+                          'Necesitaremos tu número de teléfono para contactarte.',
+                          _telefonoController,
+                          'Número de teléfono',
+                          TextInputType.phone,
+                        ),
+                        _construirPasoTexto(
+                          '¿Cómo te llamas?',
+                          'Conozcámonos un poco.',
+                          _nombreController,
+                          'Nombre o apodo',
+                          TextInputType.text,
+                        ),
+                        _construirPasoTexto(
+                          '¿Qué edad tienes?',
+                          'Debes ser mayor de edad para usar Love UTS.',
+                          _edadController,
+                          'Tu edad',
+                          TextInputType.number,
+                        ),
+                        _construirPasoSeleccion(
+                          'Mi género es',
+                          'Selecciona la opción con la que te identificas.',
+                          _generos,
+                          _generoSeleccionado,
+                          (val) => setState(() => _generoSeleccionado = val),
+                        ),
+                        _construirPasoSeleccion(
+                          'Estoy buscando...',
+                          'Esto nos ayudará a filtrar tus posibles matches.',
+                          _opcionesBusqueda,
+                          _busquedaSeleccionada,
+                          (val) => setState(() => _busquedaSeleccionada = val),
+                        ),
+                        _construirPasoSeleccion(
+                          'Mi orientación es',
+                          'Dinos cuál es tu orientación sexual.',
+                          _opcionesOrientacion,
+                          _orientacionSeleccionada,
+                          (val) =>
+                              setState(() => _orientacionSeleccionada = val),
+                        ),
                         _construirPasoIntereses(),
                         _construirPasoFiltrosMatch(),
                         _construirPasoCarruselFotos(), // <-- El nuevo carrusel interactivo
                       ],
                     ),
                   ),
-                  
+
                   SizedBox(
                     width: double.infinity,
                     height: 55,
@@ -229,11 +311,19 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
                       onPressed: _siguientePaso,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green[700],
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
                       ),
                       child: Text(
-                        _paginaActual == _totalPaginas - 1 ? 'Finalizar Perfil' : 'Continuar',
-                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        _paginaActual == _totalPaginas - 1
+                            ? 'Finalizar Perfil'
+                            : 'Continuar',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -245,13 +335,26 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
   }
 
   // --- VISTAS AUXILIARES EXISTENTES ---
-  Widget _construirPasoTexto(String titulo, String subtitulo, TextEditingController controller, String hint, TextInputType tipoTeclado) {
+  Widget _construirPasoTexto(
+    String titulo,
+    String subtitulo,
+    TextEditingController controller,
+    String hint,
+    TextInputType tipoTeclado,
+  ) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(titulo, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+        Text(
+          titulo,
+          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 10),
-        Text(subtitulo, textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+        Text(
+          subtitulo,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 14, color: Colors.grey),
+        ),
         const SizedBox(height: 35),
         TextField(
           controller: controller,
@@ -269,13 +372,27 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
     );
   }
 
-  Widget _construirPasoSeleccion(String titulo, String subtitulo, List<String> opciones, String? seleccionado, Function(String) alCambiar) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(titulo, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+  Widget _construirPasoSeleccion(
+    String titulo,
+    String subtitulo,
+    List<String> opciones,
+    String? seleccionado,
+    Function(String) alCambiar,
+  ) {
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+        Text(
+          titulo,
+          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 10),
-        Text(subtitulo, textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+        Text(
+          subtitulo,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 14, color: Colors.grey),
+        ),
         const SizedBox(height: 25),
         Column(
           children: opciones.map((opcion) {
@@ -287,18 +404,31 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
                 height: 48,
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    backgroundColor: esSeleccionado ? Colors.redAccent[100] : Colors.white,
-                    side: BorderSide(color: esSeleccionado ? Colors.redAccent : Colors.grey[400]!, width: 2),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    backgroundColor: esSeleccionado
+                        ? Colors.redAccent[100]
+                        : Colors.white,
+                    side: BorderSide(
+                      color: esSeleccionado
+                          ? Colors.redAccent
+                          : Colors.grey[400]!,
+                      width: 2,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
                   ),
                   onPressed: () => alCambiar(opcion),
-                  child: Text(opcion, style: const TextStyle(fontSize: 15, color: Colors.black)),
+                  child: Text(
+                    opcion,
+                    style: const TextStyle(fontSize: 15, color: Colors.black),
+                  ),
                 ),
               ),
             );
           }).toList(),
-        )
-      ],
+        ),
+        ],
+      ),
     );
   }
 
@@ -306,7 +436,10 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text('Tus intereses', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+        const Text(
+          'Tus intereses',
+          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 10),
         Text(
           'Selecciona al menos 3 opciones (${_interesesSeleccionados.length} elegidas)',
@@ -319,7 +452,9 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
             runSpacing: 10.0,
             alignment: WrapAlignment.center,
             children: _listaIntereses.map((interes) {
-              final estaSeleccionado = _interesesSeleccionados.contains(interes);
+              final estaSeleccionado = _interesesSeleccionados.contains(
+                interes,
+              );
               return FilterChip(
                 label: Text(interes),
                 selected: estaSeleccionado,
@@ -327,10 +462,16 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
                 checkmarkColor: Colors.redAccent,
                 backgroundColor: Colors.white,
                 labelStyle: TextStyle(
-                  color: estaSeleccionado ? Colors.redAccent[900] : Colors.black87,
-                  fontWeight: estaSeleccionado ? FontWeight.bold : FontWeight.normal,
+                  color: estaSeleccionado
+                      ? Colors.redAccent[900]
+                      : Colors.black87,
+                  fontWeight: estaSeleccionado
+                      ? FontWeight.bold
+                      : FontWeight.normal,
                 ),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 onSelected: (bool seleccionado) {
                   setState(() {
                     if (seleccionado) {
@@ -354,10 +495,16 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Center(
-          child: Text('Preferencias de Match', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+          child: Text(
+            'Preferencias de Match',
+            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+          ),
         ),
         const Center(
-          child: Text('Configura tus filtros ideales para conectar.', style: TextStyle(fontSize: 14, color: Colors.grey)),
+          child: Text(
+            'Configura tus filtros ideales para conectar.',
+            style: TextStyle(fontSize: 14, color: Colors.grey),
+          ),
         ),
         const SizedBox(height: 40),
         Text(
@@ -367,7 +514,9 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
         const SizedBox(height: 10),
         Card(
           color: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
           child: RangeSlider(
             values: _rangoEdadPreferido,
             min: 18,
@@ -392,7 +541,9 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
         const SizedBox(height: 10),
         Card(
           color: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
           child: Slider(
             value: _distanciaMaxima,
             min: 1,
@@ -415,7 +566,10 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text('Agrega Tus Fotos', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+        const Text(
+          'Agrega Tus Fotos',
+          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 8),
         const Text(
           'Desliza el cuadrado para añadir o cambiar cada una de tus 3 fotos obligatorias.',
@@ -442,21 +596,34 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
                   onTap: () => _seleccionarFoto(index),
                   child: Container(
                     decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFFF94B4), width: 2),
+                      border: Border.all(
+                        color: const Color(0xFFFF94B4),
+                        width: 2,
+                      ),
                       borderRadius: BorderRadius.circular(25),
                       image: imagen != null
-                          ? DecorationImage(image: FileImage(imagen), fit: BoxFit.cover)
+                          ? DecorationImage(
+                              image: FileImage(imagen),
+                              fit: BoxFit.cover,
+                            )
                           : null,
                     ),
                     child: imagen == null
                         ? Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.add_photo_alternate, color: Color(0xFFFF3366), size: 50),
+                              const Icon(
+                                Icons.add_photo_alternate,
+                                color: Color(0xFFFF3366),
+                                size: 50,
+                              ),
                               const SizedBox(height: 10),
                               Text(
                                 'Toca para subir la foto ${index + 1}',
-                                style: const TextStyle(color: Color(0xFFFF3366), fontWeight: FontWeight.w500),
+                                style: const TextStyle(
+                                  color: Color(0xFFFF3366),
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ],
                           )
@@ -467,10 +634,17 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
                                 right: 15,
                                 child: Container(
                                   padding: const EdgeInsets.all(6),
-                                  decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                                  child: const Icon(Icons.edit, color: Colors.white, size: 18),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.black54,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.edit,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
                                 ),
-                              )
+                              ),
                             ],
                           ),
                   ),
@@ -491,7 +665,9 @@ class _CrearPerfilPasosScreenState extends State<CrearPerfilPasosScreen> {
               height: 8,
               width: _fotoActualCarrusel == index ? 24 : 8,
               decoration: BoxDecoration(
-                color: _fotoActualCarrusel == index ? const Color(0xFFFF3366) : Colors.grey[400],
+                color: _fotoActualCarrusel == index
+                    ? const Color(0xFFFF3366)
+                    : Colors.grey[400],
                 borderRadius: BorderRadius.circular(10),
               ),
             );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Importante para verificar el perfil
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../theme/app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,9 +14,20 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  static final RegExp _emailRegex =
+      RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
 
   Future<void> _login() async {
-    final email = _emailController.text.trim();
+    final email = _emailController.text.trim().toLowerCase();
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
@@ -25,52 +37,71 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    if (!_emailRegex.hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('El correo no tiene un formato válido')),
+      );
+      return;
+    }
+
+    if (!email.endsWith('@uts.edu.co')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Usa tu correo institucional (@uts.edu.co)')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
-      // 1. Intentar iniciar sesión en Firebase Auth
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      final userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
 
       final user = userCredential.user;
+      if (user == null) return;
 
-      if (user != null) {
-        // 2. Consultar en Firestore si el perfil ya existe y está completo
-        DocumentSnapshot userDoc = await FirebaseFirestore.instance
-            .collection('usuarios')
-            .doc(user.uid)
-            .get();
+      final userDoc = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(user.uid)
+          .get();
 
-        if (userDoc.exists && userDoc.data() != null) {
-          Map<String, dynamic> datos = userDoc.data() as Map<String, dynamic>;
-          
-          // 3. Evaluar la bandera del perfil
-          if (datos['perfil_completo'] == true) {
-            print("Perfil completo encontrado. Redirigiendo a la Home.");
-            if (mounted) Navigator.pushReplacementNamed(context, '/home');
-          } else {
-            print("Perfil incompleto. Redirigiendo a creación de perfil.");
-            if (mounted) Navigator.pushReplacementNamed(context, '/crear_perfil');
-          }
+      if (!mounted) return;
+
+      if (userDoc.exists && userDoc.data() != null) {
+        final datos = userDoc.data() as Map<String, dynamic>;
+        if (datos['perfil_completo'] == true) {
+          Navigator.pushReplacementNamed(context, '/home');
         } else {
-          // Si el documento ni siquiera existe (primer ingreso absoluto)
-          print("No existe registro del usuario en Firestore. Redirigiendo a creación de perfil.");
-          if (mounted) Navigator.pushReplacementNamed(context, '/crear_perfil');
+          Navigator.pushReplacementNamed(context, '/crear_perfil');
         }
+      } else {
+        Navigator.pushReplacementNamed(context, '/crear_perfil');
       }
-
     } on FirebaseAuthException catch (e) {
       String mensaje = 'Error al iniciar sesión';
       if (e.code == 'user-not-found') mensaje = 'Usuario no registrado';
       if (e.code == 'wrong-password') mensaje = 'Contraseña incorrecta';
       if (e.code == 'invalid-credential') mensaje = 'Credenciales incorrectas';
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(mensaje)),
-      );
+      if (e.code == 'invalid-email') mensaje = 'El correo no es válido';
+      if (e.code == 'network-request-failed') {
+        mensaje = 'Sin conexión a internet';
+      }
+      if (e.code == 'too-many-requests') {
+        mensaje =
+            'Demasiados intentos. Espera ~30 min antes de volver a intentarlo.';
+      }
+      if (e.code == 'user-disabled') {
+        mensaje = 'Esta cuenta fue deshabilitada';
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(mensaje)));
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Ocurrió un error inesperado: $e')),
       );
@@ -82,61 +113,93 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 60),
-          child: Column(
-            children: [
-              // Corregido al formato de imagen limpio y sin espacios
-              Image.asset('assets/LogoLoveUTS.png', height: 120),
-              const SizedBox(height: 20),
-              const Text(
-                'LOVE UTS',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.green),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 20),
+                  Image.asset('assets/LogoLoveUTS.png', height: 110),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'LOVE UTS',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Bienvenido de vuelta',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'Correo Institucional',
+                      prefixIcon: Icon(Icons.email_outlined),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _isLoading ? null : _login(),
+                    decoration: InputDecoration(
+                      labelText: 'Contraseña',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                        ),
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _login,
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : const Text('Continuar'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () => Navigator.pushNamed(context, '/registro'),
+                    child: const Text('¿No tienes cuenta? Regístrate aquí'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 40),
-              
-              TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Correo Institucional',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email_outlined),
-                ),
-              ),
-              const SizedBox(height: 20),
-              
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Contraseña',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock_outline),
-                ),
-              ),
-              const SizedBox(height: 30),
-              
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _login,
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                  child: _isLoading 
-                    ? const CircularProgressIndicator(color: Colors.white) 
-                    : const Text('Continuar', style: TextStyle(color: Colors.white, fontSize: 18)),
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/registro');
-                },
-                child: const Text('¿No tienes cuenta? Regístrate aquí'),
-              )
-            ],
+            ),
           ),
         ),
       ),

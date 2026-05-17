@@ -7,7 +7,8 @@ class SolicitarUbicacionScreen extends StatefulWidget {
   const SolicitarUbicacionScreen({super.key});
 
   @override
-  State<SolicitarUbicacionScreen> createState() => _SolicitarUbicacionScreenState();
+  State<SolicitarUbicacionScreen> createState() =>
+      _SolicitarUbicacionScreenState();
 }
 
 class _SolicitarUbicacionScreenState extends State<SolicitarUbicacionScreen> {
@@ -47,11 +48,14 @@ class _SolicitarUbicacionScreenState extends State<SolicitarUbicacionScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         // Guardar las coordenadas en el perfil del usuario de Firestore
-        await FirebaseFirestore.instance.collection('usuarios').doc(user.uid).update({
-          'latitud': posicion.latitude,
-          'longitud': posicion.longitude,
-          'ubicacion_lista': true,
-        });
+        await FirebaseFirestore.instance
+            .collection('usuarios')
+            .doc(user.uid)
+            .update({
+              'latitud': posicion.latitude,
+              'longitud': posicion.longitude,
+              'ubicacion_lista': true,
+            });
 
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/home');
@@ -60,7 +64,10 @@ class _SolicitarUbicacionScreenState extends State<SolicitarUbicacionScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error de ubicación: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(
+            content: Text('Error de ubicación: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
     } finally {
@@ -86,15 +93,27 @@ class _SolicitarUbicacionScreenState extends State<SolicitarUbicacionScreen> {
                   color: Colors.white,
                   shape: BoxShape.circle,
                   boxShadow: [
-                    BoxShadow(color: Colors.black, blurRadius: 10, offset: const Offset(0, 5))
+                    BoxShadow(
+                      color: Colors.black,
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
                   ],
                 ),
-                child: const Icon(Icons.location_on, size: 100, color: Colors.green),
+                child: const Icon(
+                  Icons.location_on,
+                  size: 100,
+                  color: Colors.green,
+                ),
               ),
               const SizedBox(height: 40),
               const Text(
                 'Habilita Tu Ubicación',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.black),
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
               ),
               const SizedBox(height: 15),
               const Text(
@@ -103,7 +122,7 @@ class _SolicitarUbicacionScreenState extends State<SolicitarUbicacionScreen> {
                 style: TextStyle(fontSize: 15, color: Colors.grey, height: 1.4),
               ),
               const Spacer(),
-              
+
               _cargandoUbicacion
                   ? const CircularProgressIndicator(color: Colors.green)
                   : Column(
@@ -115,11 +134,17 @@ class _SolicitarUbicacionScreenState extends State<SolicitarUbicacionScreen> {
                             onPressed: _obtenerYGuardarUbicacion,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green[700],
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
                             ),
                             child: const Text(
                               'Permitir acceso a la ubicación',
-                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -131,7 +156,11 @@ class _SolicitarUbicacionScreenState extends State<SolicitarUbicacionScreen> {
                           },
                           child: const Text(
                             'O active su ubicación manualmente',
-                            style: TextStyle(color: Colors.redAccent, fontSize: 14, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],

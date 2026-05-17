@@ -40,17 +40,34 @@ dependencies:
   image_picker: ^1.2.2
   firebase_storage: ^12.4.10
   geolocator: ^14.0.2
+  flutter_card_swiper: ^7.0.2
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.6
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/LogoLoveUTS.png"
+  min_sdk_android: 21
+  remove_alpha_ios: true
+  background_color: "#FFECEF"
+  adaptive_icon_background: "#FFECEF"
+  adaptive_icon_foreground: "assets/LogoLoveUTS.png"
+
+flutter_native_splash:
+  color: "#FFECEF"
+  image: assets/LogoLoveUTS.png
+  android_12:
+    color: "#FFECEF"
+    image: assets/LogoLoveUTS.png
+    icon_background_color: "#FFECEF"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
