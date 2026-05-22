@@ -292,8 +292,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-  @override
+@override
   Widget build(BuildContext context) {
     final miUid = _miUid;
 
@@ -302,25 +301,15 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 1,
-        leading: IconButton(
-          icon: const Icon(Icons.grid_view_rounded, color: AppColors.likeRed),
-          onPressed: () {},
-        ),
+        centerTitle: true,
         title: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.all(8),
           decoration: const BoxDecoration(
             color: AppColors.darkGreen,
             shape: BoxShape.circle,
           ),
           child: const Text('💘', style: TextStyle(fontSize: 18)),
         ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.tune, color: AppColors.likeRed),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: _cargando
           ? const Center(
@@ -361,7 +350,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
     );
   }
-
   Widget _construirStories() {
     final hace24h = DateTime.now().subtract(const Duration(hours: 24));
 
