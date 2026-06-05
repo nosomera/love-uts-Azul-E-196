@@ -41,46 +41,49 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBCuarnGiQ02WqA3pDmCfLdM8wsE6kyQSY',
-    appId: '1:481289247031:web:7da051ac674cccb8dde2b2',
-    messagingSenderId: '481289247031',
-    projectId: 'aplicacion-movil-1ea44',
-    authDomain: 'aplicacion-movil-1ea44.firebaseapp.com',
-    storageBucket: 'aplicacion-movil-1ea44.firebasestorage.app',
+    apiKey: 'AIzaSyAFU6G2dboAvb-Yf70duoPwj54k1tnRbzA',
+    appId: '1:828583960275:web:7a031193ed21011a0b7e26',
+    messagingSenderId: '828583960275',
+    projectId: 'loveuts-7a90a',
+    authDomain: 'loveuts-7a90a.firebaseapp.com',
+    storageBucket: 'loveuts-7a90a.firebasestorage.app',
+    measurementId: 'G-DV8DP9255G',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBKpMoqd34aJulo5pqcQmXE3pQfTCtVZ7Y',
-    appId: '1:481289247031:android:d650e1a3fdcba3e7dde2b2',
-    messagingSenderId: '481289247031',
-    projectId: 'aplicacion-movil-1ea44',
-    storageBucket: 'aplicacion-movil-1ea44.firebasestorage.app',
+    apiKey: 'AIzaSyDm-EvXojHGFdF4riOUAjaOFqMfKqo94jw',
+    appId: '1:828583960275:android:c1be8fe350ee37820b7e26',
+    messagingSenderId: '828583960275',
+    projectId: 'loveuts-7a90a',
+    storageBucket: 'loveuts-7a90a.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDXEGACg5dsSm_v90Ll2cFYGB1cv8r8aU4',
-    appId: '1:481289247031:ios:9aeb4c1ca9cbe3cbdde2b2',
-    messagingSenderId: '481289247031',
-    projectId: 'aplicacion-movil-1ea44',
-    storageBucket: 'aplicacion-movil-1ea44.firebasestorage.app',
+    apiKey: 'AIzaSyCReHPuUN6nxB0lmK49cRSpGqNKBA_IvzQ',
+    appId: '1:828583960275:ios:d11260c00ab5ee370b7e26',
+    messagingSenderId: '828583960275',
+    projectId: 'loveuts-7a90a',
+    storageBucket: 'loveuts-7a90a.firebasestorage.app',
     iosBundleId: 'com.example.loveuts',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyDXEGACg5dsSm_v90Ll2cFYGB1cv8r8aU4',
-    appId: '1:481289247031:ios:9aeb4c1ca9cbe3cbdde2b2',
-    messagingSenderId: '481289247031',
-    projectId: 'aplicacion-movil-1ea44',
-    storageBucket: 'aplicacion-movil-1ea44.firebasestorage.app',
+    apiKey: 'AIzaSyCReHPuUN6nxB0lmK49cRSpGqNKBA_IvzQ',
+    appId: '1:828583960275:ios:d11260c00ab5ee370b7e26',
+    messagingSenderId: '828583960275',
+    projectId: 'loveuts-7a90a',
+    storageBucket: 'loveuts-7a90a.firebasestorage.app',
     iosBundleId: 'com.example.loveuts',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyBCuarnGiQ02WqA3pDmCfLdM8wsE6kyQSY',
-    appId: '1:481289247031:web:27a68eeeda03edd1dde2b2',
-    messagingSenderId: '481289247031',
-    projectId: 'aplicacion-movil-1ea44',
-    authDomain: 'aplicacion-movil-1ea44.firebaseapp.com',
-    storageBucket: 'aplicacion-movil-1ea44.firebasestorage.app',
+    apiKey: 'AIzaSyAFU6G2dboAvb-Yf70duoPwj54k1tnRbzA',
+    appId: '1:828583960275:web:647e0185678de6940b7e26',
+    messagingSenderId: '828583960275',
+    projectId: 'loveuts-7a90a',
+    authDomain: 'loveuts-7a90a.firebaseapp.com',
+    storageBucket: 'loveuts-7a90a.firebasestorage.app',
+    measurementId: 'G-QCXF6S7VC7',
   );
+
 }
