@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../services/notifications_service.dart';
+
 class ChatScreen extends StatefulWidget {
   final String matchId;
   final String otroUid;
@@ -25,13 +27,21 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _mensajeController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final NotificationsService _notificationsService = NotificationsService();
   bool _enviando = false;
+  bool _marcandoLeidos = false;
 
   String? get _miUid => FirebaseAuth.instance.currentUser?.uid;
 
   Widget _avatarConHero({required double radius, required Widget child}) {
     if (widget.heroTag == null) return child;
     return Hero(tag: widget.heroTag!, child: child);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _marcarMensajesEntrantesLeidos();
   }
 
   @override
@@ -54,16 +64,26 @@ class _ChatScreenState extends State<ChatScreen> {
       final matchRef = db.collection('matches').doc(widget.matchId);
       final ahora = FieldValue.serverTimestamp();
 
-      await matchRef.collection('mensajes').add({
+      final mensajeRef = await matchRef.collection('mensajes').add({
         'from': miUid,
+        'to': widget.otroUid,
         'texto': texto,
         'timestamp': ahora,
+        'estado': 'enviado',
       });
 
       await matchRef.update({
         'ultimo_mensaje': texto,
         'ultimo_mensaje_time': ahora,
       });
+
+      await _notificationsService.crearNotificacionMensaje(
+        uidDestino: widget.otroUid,
+        uidOrigen: miUid,
+        matchId: widget.matchId,
+        mensajeId: mensajeRef.id,
+        texto: texto,
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -72,6 +92,34 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     } finally {
       if (mounted) setState(() => _enviando = false);
+    }
+  }
+
+  Future<void> _marcarMensajesEntrantesLeidos() async {
+    final miUid = _miUid;
+    if (miUid == null || _marcandoLeidos) return;
+
+    _marcandoLeidos = true;
+    try {
+      final mensajes = await FirebaseFirestore.instance
+          .collection('matches')
+          .doc(widget.matchId)
+          .collection('mensajes')
+          .where('to', isEqualTo: miUid)
+          .get();
+
+      final batch = FirebaseFirestore.instance.batch();
+      var hayCambios = false;
+      for (final doc in mensajes.docs) {
+        final data = doc.data();
+        if (data['estado'] != 'leido') {
+          batch.update(doc.reference, {'estado': 'leido'});
+          hayCambios = true;
+        }
+      }
+      if (hayCambios) await batch.commit();
+    } finally {
+      _marcandoLeidos = false;
     }
   }
 
@@ -385,6 +433,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         );
                       }
                       final docs = snapshot.data?.docs ?? [];
+                      _marcarMensajesEntrantesLeidos();
                       if (docs.isEmpty) {
                         return Center(
                           child: Padding(
@@ -423,10 +472,12 @@ class _ChatScreenState extends State<ChatScreen> {
                           final esMio = data['from'] == miUid;
                           final texto = data['texto'] ?? '';
                           final timestamp = data['timestamp'] as Timestamp?;
+                          final estado = data['estado'] as String? ?? 'enviado';
                           return _Burbuja(
                             texto: texto,
                             esMio: esMio,
                             hora: _formatearHora(timestamp),
+                            estado: estado,
                           );
                         },
                       );
@@ -508,11 +559,13 @@ class _Burbuja extends StatelessWidget {
   final String texto;
   final bool esMio;
   final String hora;
+  final String estado;
 
   const _Burbuja({
     required this.texto,
     required this.esMio,
     required this.hora,
+    required this.estado,
   });
 
   @override
@@ -549,11 +602,11 @@ class _Burbuja extends StatelessWidget {
               ),
             ),
           ),
-          if (hora.isNotEmpty)
+          if (hora.isNotEmpty || esMio)
             Padding(
               padding: const EdgeInsets.only(top: 2, left: 4, right: 4),
               child: Text(
-                hora,
+                esMio && hora.isNotEmpty ? '$hora · $estado' : hora,
                 style: TextStyle(fontSize: 10, color: Colors.grey[600]),
               ),
             ),

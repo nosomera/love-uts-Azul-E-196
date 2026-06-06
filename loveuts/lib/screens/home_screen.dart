@@ -7,6 +7,7 @@ import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import '../theme/app_colors.dart';
+import '../services/notifications_service.dart';
 import 'story_viewer_screen.dart';
 import 'detalle_perfil_screen.dart';
 
@@ -32,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final CardSwiperController _swiperController = CardSwiperController();
   final ImagePicker _picker = ImagePicker();
+  final NotificationsService _notificationsService = NotificationsService();
 
   String? get _miUid => FirebaseAuth.instance.currentUser?.uid;
 
@@ -127,12 +129,22 @@ class _HomeScreenState extends State<HomeScreen> {
     if (tipo != 'like' && tipo != 'super') return false;
 
     final uids = [miUid, otroUid]..sort();
-    await db.collection('matches').doc(uids.join('_')).set({
+    final matchId = uids.join('_');
+    final matchRef = db.collection('matches').doc(matchId);
+    final matchExistente = await matchRef.get();
+    if (matchExistente.exists) return false;
+
+    await matchRef.set({
       'users': uids,
       'timestamp': FieldValue.serverTimestamp(),
       'ultimo_mensaje': null,
       'ultimo_mensaje_time': null,
     });
+    await _notificationsService.crearNotificacionesMatch(
+      matchId: matchId,
+      uidA: miUid,
+      uidB: otroUid,
+    );
     return true;
   }
 
