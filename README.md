@@ -4,6 +4,7 @@ Integrantes:
 Camilo Andres Pacheco Gomez -> Lider
 Yesica Dayana Rueda Saldarriaga
 Rafael Fabian Calderon Bautista
+Lady Vanessa Jaimes Rueda
 
 Color: Azul
 Grupo:E-196

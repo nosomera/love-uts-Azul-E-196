@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../services/fcm_service.dart';
 import 'editar_perfil_screen.dart';
 import 'cambiar_contrasena_screen.dart';
 
@@ -191,6 +192,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
     );
 
     if (confirmar == true) {
+      await FcmService.instance.eliminarTokenActual();
       await FirebaseAuth.instance.signOut();
       if (context.mounted) {
         Navigator.of(context, rootNavigator: true)
